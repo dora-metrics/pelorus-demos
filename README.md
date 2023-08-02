@@ -8,9 +8,15 @@ Contains a very simple Python HTTP server that just serves the `response.txt` fi
 
 The file can easily be appended to, in order to demonstrate pipelines deploying changes.
 
-<!-- TODO To run this demo, fork it to your organization/user -->
+### Requirements
 
-Create a Pelorus instance with the following content
+- An OpenShift cluster with Pelorus installed
+- A fork of this repository with access to commit and add webhooks
+- A GitHub Personal Access Token (PAT) with access to read the forked repository issues
+
+### Set up
+
+Create a Pelorus instance with the following content, changing `<your_github_pat>` to your GitHub PAT and `<your_fork>` to your organization/user of the forked repository.
 ```yaml
 apiVersion: charts.pelorus.dora-metrics.io/v1alpha1
 kind: Pelorus
@@ -35,15 +41,16 @@ spec:
       - name: PROVIDER
         value: github
       - name: TOKEN
-        value: <your_github_api_token>
+        value: <your_github_pat>
       - name: PROJECTS
-        value: dora-metrics/pelorus-demos
+        value: <your_fork>/pelorus-demos
 ```
 
 To create and start application, run
 ```sh
-oc process -f basic-python.yaml | oc apply -f -
+oc process -f basic-python.yaml -p=FORK_ORG=<your_fork> | oc apply -f -
 ```
+changing `<your_fork>` to your organization/user of the forked repository.
 
 Add webhook in the repository using this URL
 ```sh
@@ -51,11 +58,15 @@ oc describe bc/basic-python-app -n basic-python | \
 grep 'webhooks/<secret>/github' | \
 sed "s/<secret>/$(oc get bc/basic-python-app -o=jsonpath='{.spec.triggers..github.secret}' -n basic-python)/g"
 ```
-TODO more details https://pelorus.readthedocs.io/en/latest/GettingStarted/QuickstartTutorial/#github-webhook
+[More details on configuring webhook](https://pelorus.readthedocs.io/en/latest/GettingStarted/QuickstartTutorial/#github-webhook).
 
-Now, create commits (changing `response.txt` file), issues (with the `bug` and `app.kubernetes.io/name=basic-python-app` labels) and resolve issues in the repository to see Pelorus dashboards in action.
-
-To stop and delete application, run
+After finishing testing, to stop and delete application, run
 ```sh
-oc process -f basic-python.yaml | oc delete -f -
+oc process -f basic-python.yaml -p=FORK_ORG=<your_fork> | oc delete -f -
 ```
+
+### Test
+
+To see Pelorus dashboards in action
+- Create commits changing the `response.txt` file (because of the configured webhook, every commit will result in a deploy)
+- Create and resolve issues with the `bug` and `app.kubernetes.io/name=basic-python-app` labels

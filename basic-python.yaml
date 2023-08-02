@@ -9,12 +9,11 @@ parameters:
   - name: APPLICATION_NAME
     description: The name for the application.
     value: basic-python-app
-  # TODO break in org + repo to be easier to use from forks
-  - name: PROJECT_URI
-    description: "Project URI with the basic-python app"
-    value: https://github.com/dora-metrics/pelorus-demos
+  - name: FORK_ORG
+    description: The organization/user of the forked repository
+    value: dora-metrics
   - name: PROJECT_REF
-    description: "Project ref with the basic-python app"
+    description: Project ref with the basic-python app
     value: master
 objects:
   - kind: Namespace
@@ -44,7 +43,7 @@ objects:
       source:
         type: Git
         git:
-          uri: ${PROJECT_URI}
+          uri: https://github.com/${FORK_ORG}/pelorus-demos
           ref: ${PROJECT_REF}
         contextDir: "basic-python"
       strategy:
