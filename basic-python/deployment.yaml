@@ -1,0 +1,172 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: basic-python-app
+  name: basic-python
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app.kubernetes.io/name: basic-python-app
+  name: basic-python-app
+  namespace: basic-python
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: basic-python-app:latest
+  source:
+    contextDir: basic-python
+    git:
+      ref: master
+      uri: https://github.com/dora-metrics/pelorus-demos
+    type: Git
+  strategy:
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        name: python-39:latest
+  triggers:
+  - github:
+      secret: 4Xwu0tyAab90aaoasd88qweAasdaqvjknfrl3qwpo
+    type: GitHub
+  - generic:
+      secret: 4Xwu0tyAab90aaoasd88qweAasdaqvjknfrl3qwpo
+    type: Generic
+  - type: ConfigChange
+  - imageChange: {}
+    type: ImageChange
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: python-39
+  namespace: basic-python
+spec:
+  lookupPolicy:
+    local: false
+  tags:
+  - annotations: null
+    from:
+      kind: DockerImage
+      name: registry.access.redhat.com/ubi9/python-39:latest
+    generation: 1
+    importPolicy: {}
+    name: latest
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  labels:
+    app.kubernetes.io/component: api
+    app.kubernetes.io/instance: basic-python-app-build
+    app.kubernetes.io/name: basic-python-app
+    app.kubernetes.io/part-of: basic-python-app
+  name: basic-python-app
+  namespace: basic-python
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app.kubernetes.io/component: api
+    app.kubernetes.io/instance: basic-python-app-build
+    app.kubernetes.io/name: basic-python-app
+    app.kubernetes.io/part-of: basic-python-app
+  name: basic-python-app-build-pvc
+  namespace: basic-python
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    description: The web server's http port.
+  labels:
+    app.kubernetes.io/component: api
+    app.kubernetes.io/instance: basic-python-app-deployment
+    app.kubernetes.io/name: basic-python-app
+    app.kubernetes.io/part-of: basic-python-app
+  name: basic-python-app
+  namespace: basic-python
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    deploymentConfig: basic-python-app
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotations:
+    description: Route for application's http service.
+  labels:
+    app.kubernetes.io/component: api
+    app.kubernetes.io/instance: basic-python-app-deployment
+    app.kubernetes.io/name: basic-python-app
+    app.kubernetes.io/part-of: basic-python-app
+  name: basic-python-app
+  namespace: basic-python
+spec:
+  to:
+    name: basic-python-app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"basic-python-app:latest","namespace":"basic-python"},"fieldPath":"spec.template.spec.containers[?(@.name==\"basic-python-app\")].image","paused":"false"}]'
+  labels:
+    app.kubernetes.io/component: api
+    app.kubernetes.io/instance: basic-python-app-deployment
+    app.kubernetes.io/name: basic-python-app
+    app.kubernetes.io/part-of: basic-python-app
+  name: basic-python-app
+  namespace: basic-python
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deploymentConfig: basic-python-app
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: api
+        app.kubernetes.io/instance: basic-python-app-deployment
+        app.kubernetes.io/name: basic-python-app
+        app.kubernetes.io/part-of: basic-python-app
+        deploymentConfig: basic-python-app
+      name: basic-python-app
+    spec:
+      containers:
+      - env:
+        - name: APP_FILE
+          value: example.py
+        image: image-registry.openshift-image-registry.svc:5000/basic-python/basic-python-app:latest
+        imagePullPolicy: Always
+        name: basic-python-app
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - curl -s 'http://localhost:8080'
+      terminationGracePeriodSeconds: 60
+
