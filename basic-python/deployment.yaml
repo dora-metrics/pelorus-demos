@@ -21,7 +21,7 @@ spec:
   source:
     contextDir: basic-python
     git:
-      ref: master
+      ref: convert-to-deployment
       uri: https://github.com/dora-metrics/pelorus-demos
     type: Git
   strategy:
