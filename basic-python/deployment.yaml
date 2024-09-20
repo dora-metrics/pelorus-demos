@@ -130,7 +130,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"basic-python-app:latest","namespace":"basic-python"},"fieldPath":"spec.template.spec.containers[?(@.name==\"basic-python-app\")].image","paused":"false"}]'
+    #image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"basic-python-app:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"basic-python-app\")].image"}]'
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"basic-python-app:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"basic-python-app\")].image"}]'
   labels:
     app.kubernetes.io/component: api
     app.kubernetes.io/instance: basic-python-app-deployment
